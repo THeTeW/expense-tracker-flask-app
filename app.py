@@ -5,7 +5,7 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask import render_template, request, redirect, url_for, flash
 from datetime import datetime
-from config import YOUR_CONNECTION_STRING
+
 from sqlalchemy import func
 
 
@@ -15,7 +15,8 @@ app = Flask(__name__)
 # (สำคัญ!) เปลี่ยน YOUR_CONNECTION_STRING เป็นกุญแจจาก Neon
 # นี่คือการบอก Flask ว่าฐานข้อมูลของเราอยู่ที่ไหน
 
-app.config['SQLALCHEMY_DATABASE_URI'] = YOUR_CONNECTION_STRING
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 # ตั้งค่า Secret Key สำหรับรักษาความปลอดภัยของ Session (จำเป็นสำหรับ Flask-Login)
 # ใส่ข้อความอะไรก็ได้ที่คุณคิดขึ้นมาเอง
