@@ -12,17 +12,31 @@ from sqlalchemy import func
 # --- 1. ตั้งค่าแอปพลิเคชัน (App Setup) ---
 app = Flask(__name__)
 
-# (สำคัญ!) เปลี่ยน YOUR_CONNECTION_STRING เป็นกุญแจจาก Neon
-# นี่คือการบอก Flask ว่าฐานข้อมูลของเราอยู่ที่ไหน
+############################################################################
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+try:
+    # 1. พยายามดึงค่าจากไฟล์ config.py (สำหรับรันบน Local PC)
+    from config import YOUR_CONNECTION_STRING, YOUR_SECRET_KEY
 
-# ตั้งค่า Secret Key สำหรับรักษาความปลอดภัยของ Session (จำเป็นสำหรับ Flask-Login)
-# ใส่ข้อความอะไรก็ได้ที่คุณคิดขึ้นมาเอง
-app.config['SECRET_KEY'] = 'a_very_secret_key_that_no_one_knows'
+    print("--- Loading config from local config.py file (Development) ---")
 
-# --- 2. เริ่มใช้งานเครื่องมือ (Initialize Extensions) ---
+    app.config['SQLALCHEMY_DATABASE_URI'] = YOUR_CONNECTION_STRING
+    app.config['SECRET_KEY'] = YOUR_SECRET_KEY
+
+except ImportError:
+    # 2. ถ้า import ล้มเหลว (แปลว่ารันบน Render เพราะไม่มีไฟล์ config.py)
+    #    ให้ดึงค่าจาก Environment Variables แทน
+    print("--- Loading config from Environment Variables (Production) ---")
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+
+    # (สำคัญ!) ตรวจสอบว่า Render ตั้งค่าไว้ครบหรือไม่
+    if not app.config['SQLALCHEMY_DATABASE_URI'] or not app.config['SECRET_KEY']:
+        print("ERROR: Environment variables are not set on the server!")
+# --- (จบส่วน Config) ---
+
+############################################################################
 
 # สร้าง "ล่าม" แปล Python เป็น SQL
 db = SQLAlchemy(app)
