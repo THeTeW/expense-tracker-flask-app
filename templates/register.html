@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ลงทะเบียน</title>
+    <style>
+        body { font-family: sans-serif; display: grid; place-items: center; min-height: 90vh; }
+        form { border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+        div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 8px; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <form method="POST" action="/register">
+        <h2>สร้างบัญชีใหม่</h2>
+        <div>
+            <label for="username">ชื่อผู้ใช้ (Username):</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">รหัสผ่าน (Password):</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">ลงทะเบียน</button>
+    </form>
+</body>
+</html>

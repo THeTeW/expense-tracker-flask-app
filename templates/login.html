@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ล็อกอิน</title>
+    <style>
+        body { font-family: sans-serif; display: grid; place-items: center; min-height: 90vh; }
+        form { border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+        div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 8px; }
+        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; }
+        .alert { padding: 10px; background-color: #f8d7da; color: #721c24; border-radius: 5px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <form method="POST" action="/login">
+        <h2>เข้าสู่ระบบ</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div>
+            <label for="username">ชื่อผู้ใช้ (Username):</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">รหัสผ่าน (Password):</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">ล็อกอิน</button>
+        <p style="text-align: center; margin-top: 10px;">
+            ยังไม่มีบัญชี? <a href="/register">ลงทะเบียนที่นี่</a>
+        </p>
+    </form>
+</body>
+</html>
