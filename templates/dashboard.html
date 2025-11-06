@@ -18,36 +18,7 @@
              <h1 class="display-5 text-success">฿ {{ "%.2f"|format(total_balance) }}</h1>
         </div>
 
-        <div class="card p-3 mb-4 mx-3">
-            <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3 align-items-end">
 
-                <div class="col-md-4">
-                    <label for="wallet_id" class="form-label">เลือกกระเป๋า:</label>
-                    <select name="wallet_id" id="wallet_id" class="form-select">
-                        <option value="">-- ดูทั้งหมด --</option>
-                            {% for wallet in wallet_data %}
-                            <option value="{{ wallet.id }}" {% if wallet.id == selected_wallet_id %}selected{% endif %}>
-                                {{ wallet.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="date_from" class="form-label">จากวันที่:</label>
-                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
-                </div>
-
-                <div class="col-md-3">
-                    <label for="date_to" class="form-label">ถึงวันที่:</label>
-                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
-                </div>
-
-                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-info w-100">กรอง</button>
-                </div>
-            </form>
-        </div>
 
         <hr>
 
@@ -91,10 +62,14 @@
                         <button type="submit" class="btn btn-secondary w-100">สร้างหมวดหมู่</button>
                     </form>
                 </div>
+                <div class="card p-3 mb-3">
+                    <canvas id="categoryPieChart"></canvas>
+                </div>
             </div>
 
             <div class="col-md-4">
                 <h3><small class="text-muted">2.</small> หมวดหมู่</h3>
+
                 <h6>รายจ่าย</h6>
                 <ul class="list-group list-group-flush mb-2" style="max-height: 150px; overflow-y: auto;">
                      {% for cat in expense_categories %}
@@ -163,6 +138,38 @@
                     </form>
                 </div>
             </div>
+        </div>
+
+        <hr>
+        <div class="card p-3 mb-4 mx-3">
+            <form method="GET" action="{{ url_for('dashboard') }}" class="row g-3 align-items-end">
+
+                <div class="col-md-4">
+                    <label for="wallet_id" class="form-label">เลือกกระเป๋า:</label>
+                    <select name="wallet_id" id="wallet_id" class="form-select">
+                        <option value="">-- ดูทั้งหมด --</option>
+                            {% for wallet in wallet_data %}
+                            <option value="{{ wallet.id }}" {% if wallet.id == selected_wallet_id %}selected{% endif %}>
+                                {{ wallet.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label">จากวันที่:</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label">ถึงวันที่:</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+
+                 <div class="col-md-2">
+                    <button type="submit" class="btn btn-info w-100">กรอง</button>
+                </div>
+            </form>
         </div>
 
         <hr class="my-4">
@@ -245,5 +252,49 @@
             updateCategories(document.getElementById('type_select').value);
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // ฟังก์ชันนี้จะดึง URL ปัจจุบันและส่งต่อ Filter (เช่น เดือน/ปี/กระเป๋า)
+        // ไปให้ API ของเราโดยอัตโนมัติ
+        const currentQueryString = window.location.search;
+
+        // 1. ดึงข้อมูลจาก API ของเรา
+        fetch(`/api/category_summary${currentQueryString}`)
+            .then(response => response.json())
+            .then(data => {
+
+                // 2. ค้นหากระดานวาดภาพ
+                const ctx = document.getElementById('categoryPieChart').getContext('2d');
+
+                // 3. สร้างกราฟ
+                new Chart(ctx, {
+                type: 'pie', // ประเภทกราฟ (วงกลม)
+                    data: {
+                        labels: data.labels, // ชื่อหมวดหมู่
+                        datasets: [{
+                            label: 'ยอดรายจ่าย',
+                            data: data.data, // ตัวเลขยอดเงิน
+                            backgroundColor: [ // (สีสุ่ม)
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                '#9966FF', '#FF9F40'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                            title: {
+                                display: true,
+                                text: 'สรุปยอดรายจ่ายตามหมวดหมู่ (ตามที่กรอง)'
+                            }
+                        }
+                    }
+                });
+            });
+    </script>
+
 </body>
 </html>

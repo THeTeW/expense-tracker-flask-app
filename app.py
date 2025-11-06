@@ -3,7 +3,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from datetime import datetime
 
 from sqlalchemy import func
@@ -577,6 +577,58 @@ def edit_transaction(transaction_id):
                            user_wallets=user_wallets,
                            income_categories=income_categories,
                            expense_categories=expense_categories)
+
+###############################API#################################
+
+@app.route("/api/category_summary")
+@login_required
+def category_summary():
+    # --- 1. อ่านค่า Filter จาก URL (เหมือนกับใน dashboard) ---
+    selected_wallet_id = request.args.get('wallet_id', type=int)
+    date_from_str = request.args.get('date_from')
+    date_to_str = request.args.get('date_to')
+
+    # --- 2. ตั้งค่าวันที่เริ่มต้น (เหมือนกับใน dashboard) ---
+    today = datetime.now()
+    if date_from_str:
+        date_from_obj = datetime.strptime(date_from_str, '%Y-%m-%d').date()
+    else:
+        date_from_obj = today.replace(day=1).date()
+
+    if date_to_str:
+        date_to_obj = datetime.strptime(date_to_str, '%Y-%m-%d').date()
+    else:
+        date_to_obj = today.date()
+
+    # --- 3. ดึง ID กระเป๋าเงินของผู้ใช้ (เหมือนกับใน dashboard) ---
+    user_wallets = Wallet.query.filter_by(user_id=current_user.user_id).all()
+    wallet_ids = [wallet.wallet_id for wallet in user_wallets]
+
+    # --- 4. (สำคัญ!) สร้าง Query สรุปยอดรายจ่ายตามหมวดหมู่ ---
+    # เราจะใช้ SQL (func.sum, group_by) เพื่อคำนวณอย่างมีประสิทธิภาพ
+    query = db.session.query(
+        Category.category_name,
+        func.sum(Transaction.amount).label('total_amount')
+    ).join(Category, Transaction.category_id == Category.category_id) \
+        .filter(Transaction.wallet_id.in_(wallet_ids)) \
+        .filter(Transaction.type == 'expense') \
+        .filter(Transaction.date.between(date_from_obj, date_to_obj))
+
+    # (เพิ่ม Filter กระเป๋า ถ้ามีการเลือก)
+    if selected_wallet_id:
+        query = query.filter(Transaction.wallet_id == selected_wallet_id)
+
+    # สรุปผลและจัดเรียง
+    summary_data = query.group_by(Category.category_name) \
+        .order_by(func.sum(Transaction.amount).desc()) \
+        .all()  # ผลลัพธ์จะเป็น [('อาหาร', 500.00), ('เดินทาง', 300.00)]
+
+    # --- 5. แปลงข้อมูลให้อยู่ในรูปแบบที่ Chart.js ต้องการ ---
+    labels = [row[0] for row in summary_data]
+    data = [float(row[1]) for row in summary_data]  # แปลง Decimal เป็น float
+
+    # --- 6. ส่งข้อมูลกลับไปเป็น JSON ---
+    return jsonify(labels=labels, data=data)
 
 ###############################logout################################################
 
